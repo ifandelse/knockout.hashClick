@@ -1,0 +1,3 @@
+knockoutDebugCallback([
+    'knockout.hashClick.js'
+]);
