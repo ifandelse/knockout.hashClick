@@ -12,39 +12,39 @@ var HashClickMediator = function() {
 		}
 	};
 
-    this['priorHashParams'] = {};
+    this.priorHashParams = {};
 
-    this['mappings'] = {};
+    this.mappings = {};
 
-    this['updateVmFromHash'] = function() {
+    this.updateVmFromHash = function() {
         var paramsObj = hashClickHelpers.getHashParamsAsObject(),
             curVal;
         // iterate over the params on the hash query string and update the model if necessary
         for(var p in paramsObj) {
             if(paramsObj.hasOwnProperty(p)) {
-                if(this['mappings'][p]) {
-                    if(typeof this['mappings'][p]['vm'][this['mappings'][p]['member']] === 'function') { // it's an observable
-                        curVal = ko.utils.unwrapObservable(this['mappings'][p]['vm'][this['mappings'][p]['member']]);
+                if(this.mappings[p]) {
+                    if(typeof this.mappings[p]['vm'][this.mappings[p]['member']] === 'function') { // it's an observable
+                        curVal = ko['utils']['unwrapObservable'](this.mappings[p]['vm'][this.mappings[p]['member']]);
                         if(curVal !== paramsObj[p]) {
-                            this['mappings'][p]['vm'][this['mappings'][p]['member']](paramsObj[p]);
+                            this.mappings[p]['vm'][this.mappings[p]['member']](paramsObj[p]);
                         }
                     }
-                    else {
-                        this['mappings'][p]['vm']['member'] = paramsObj[p];
+                    else if(this.mappings[p]['vm'][this.mappings[p]['member']]) {  // we only want to set a member this still exists on the vm
+                        this.mappings[p]['vm']['member'] = paramsObj[p];
                     }
                 }
             }
         }
         // next we need to iterate over the mappings, and any mapping that did appear in the last hash, but not this one gets set to the stored default
-        for(var m in this['mappings']) {
-            if(this['mappings'].hasOwnProperty(m)) {
+        for(var m in this.mappings) {
+            if(this.mappings.hasOwnProperty(m)) {
                 // did the mapped param appear in the prior hash and not appear in this hash?
-                if(!paramsObj[m] && this['priorHashParams'][m]) {
-                    this['mappings'][m]['vm'][this['mappings'][m]['member']](this['mappings'][m]['defaultValue']);
+                if(!paramsObj[m] && this.priorHashParams[m]) {
+                    this.mappings[m]['vm'][this.mappings[m]['member']](this.mappings[m]['defaultValue']);
                 }
             }
         }
-        this['priorHashParams'] = paramsObj;
+        this.priorHashParams = paramsObj;
     }.bind(this);
 
     this['handleEvent'] = function(targetVal, bindingData, viewModel) {
@@ -57,11 +57,11 @@ var HashClickMediator = function() {
         paramObj[paramName] = targetVal;
         mapObj = { member: bindingData['member'], vm: viewModel };
         if(!this.mappings[bindingData['substitute']]) {
-            mapObj.defaultValue = ko.utils.unwrapObservable(viewModel[bindingData['member']]); // capture the value prior to hash params causing it to change
+            mapObj.defaultValue = ko['utils']['unwrapObservable'](viewModel[bindingData['member']]); // capture the value prior to hash params causing it to change
             this.mappings[bindingData['substitute']] = mapObj;
         }
         else {
-            this.mappings[bindingData['substitute']] = $.extend(this.mappings[bindingData['substitute']], mapObj);
+            this.mappings[bindingData['substitute']] = $['extend'](this.mappings[bindingData['substitute']], mapObj);
         }
         hashClickHelpers.mergeOntoHashQueryString(paramObj);
     }.bind(this);
@@ -86,12 +86,12 @@ var hashClickHelpers = {
     },
 
     getHashParamsAsObject: function() {
-        return this.deparam(this.getHashQueryString());
+        return this.deparam(this.getHashQueryString(), true);
     },
 
     setHashQueryString: function(qryStr) {
         var hashData = this.getHash().split('?');
-        window.location.hash = hashData[0] + "?" + qryStr;
+        window.location.hash = qryStr == "" ? qryStr : hashData[0] + "?" + qryStr;
     },
 
     // Ben Alman's deparam function from the BBQ plugin (license included in the license file.
@@ -230,7 +230,7 @@ var hashClickHelpers = {
     }
 };
 
-ko.bindingHandlers['hashClick'] = {
+ko['bindingHandlers']['hashClick'] = {
 
     'init': function (element, valueAccessor, allBindingsAccessor, viewModel) {
         var bindingData = valueAccessor();
