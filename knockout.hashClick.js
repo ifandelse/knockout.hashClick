@@ -16,6 +16,8 @@ var HashClickMediator = function() {
 
     this.mappings = {};
 
+    this.updateReady = {};
+
     this.updateVmFromHash = function() {
         var paramsObj = hashClickHelpers.getHashParamsAsObject(),
             curVal;
@@ -40,6 +42,11 @@ var HashClickMediator = function() {
             if(this.mappings.hasOwnProperty(m)) {
                 // did the mapped param appear in the prior hash and not appear in this hash?
                 if(!paramsObj[m] && this.priorHashParams[m]) {
+                    // turning off the update-ready status for this member since we're about to set it (only if the value is different than the default)
+                    // the change *could* otherwise update the hash (if the binding included "watch", or the value referenced the observable)
+                    if(ko.utils.unwrapObservable(this.mappings[m]['vm'][this.mappings[m]['member']]) !== this.mappings[m]['defaultValue']) {
+                        this.updateReady[this.mappings[m]['member']] = false;
+                    }
                     this.mappings[m]['vm'][this.mappings[m]['member']](this.mappings[m]['defaultValue']);
                 }
             }
@@ -65,8 +72,6 @@ var HashClickMediator = function() {
         }
         hashClickHelpers.mergeOntoHashQueryString(paramObj);
     }.bind(this);
-
-    this['readyToUpdate'] = false;
 
     addEventListener(window, "hashchange", this['updateVmFromHash']);
 }
@@ -244,12 +249,12 @@ ko['bindingHandlers']['hashClick'] = {
     },
 
     'update': function (element, valueAccessor, allBindingsAccessor, viewModel) {
-        if(mediator['readyToUpdate']) {
-            var bindingData = valueAccessor();
+        var bindingData = valueAccessor();
+        if(mediator.updateReady[bindingData['member']]) {
             mediator.handleEvent(ko.utils.unwrapObservable(viewModel[bindingData['member']]), bindingData, viewModel);
         }
         else {
-            mediator['readyToUpdate'] = true;
+            mediator.updateReady[bindingData['member']] = true;
         }
     }
 }
